@@ -6,6 +6,7 @@ import useStatsStore from '@/features/Progress/store/useStatsStore';
 import { generateKanaQuestion } from '@/features/Kana/lib/generateKanaQuestions';
 import type { KanaCharacter } from '@/features/Kana/lib/generateKanaQuestions';
 import { flattenKanaGroups } from '@/features/Kana/lib/flattenKanaGroup';
+import { kana } from '@/features/Kana/data/kana';
 import TimedChallenge, {
   type TimedChallengeConfig
 } from '@/shared/components/TimedChallenge';
@@ -15,6 +16,12 @@ export default function TimedChallengeKana() {
 
   const selectedKana = React.useMemo(
     () => flattenKanaGroups(kanaGroupIndices) as unknown as KanaCharacter[],
+    [kanaGroupIndices]
+  );
+
+  // Convert indices to group names for display
+  const selectedKanaGroups = React.useMemo(
+    () => kanaGroupIndices.map(i => kana[i]?.groupName || `Group ${i + 1}`),
     [kanaGroupIndices]
   );
 
@@ -34,14 +41,26 @@ export default function TimedChallengeKana() {
     localStorageKey: 'timedChallengeDuration',
     goalTimerContext: 'Kana Timed Challenge',
     items: selectedKana,
+    selectedSets: selectedKanaGroups,
     generateQuestion: items => generateKanaQuestion(items),
     renderQuestion: question => question.kana,
     getAudioText: question => question.kana,
     inputPlaceholder: 'Type the romaji...',
-    modeDescription: 'Mode: Input (See kana → Type romaji)',
+    modeDescription: 'Mode: Type (See kana → Type romaji)',
     checkAnswer: (question, answer) =>
       answer.toLowerCase() === question.romaji.toLowerCase(),
     getCorrectAnswer: question => question.romaji,
+    // Pick mode support
+    generateOptions: (question, items, count) => {
+      const correctAnswer = question.romaji;
+      const incorrectOptions = items
+        .filter(item => item.romaji !== correctAnswer)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, count - 1)
+        .map(item => item.romaji);
+      return [correctAnswer, ...incorrectOptions];
+    },
+    getCorrectOption: question => question.romaji,
     stats: {
       correct: timedCorrectAnswers,
       wrong: timedWrongAnswers,

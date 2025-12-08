@@ -209,7 +209,7 @@ const TopBar: React.FC<ITopBarProps> = ({ currentDojo }: ITopBarProps) => {
                     onClick={() => playClick()}
                   >
                     <Timer size={20} />
-                    <span className='whitespace-nowrap'>Timed Challenge</span>
+                    <span className='whitespace-nowrap'>Blitz</span>
                   </button>
                 </Link>
               )}
@@ -233,7 +233,7 @@ const TopBar: React.FC<ITopBarProps> = ({ currentDojo }: ITopBarProps) => {
                   setShowGameModesModal(true);
                 }}
               >
-                <span className='whitespace-nowrap'>Start Training</span>
+                <span className='whitespace-nowrap'>Train</span>
                 <Play className={clsx(isFilled && 'fill-current')} size={20} />
               </button>
             </div>

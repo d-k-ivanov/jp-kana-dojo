@@ -13,14 +13,19 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  X
+  X,
+  MousePointerClick,
+  Keyboard
 } from 'lucide-react';
 import { Link } from '@/core/i18n/routing';
 import clsx from 'clsx';
 import confetti from 'canvas-confetti';
 import SSRAudioButton from '@/shared/components/SSRAudioButton';
 import GoalTimersPanel from '@/shared/components/Timer/GoalTimersPanel';
-// import { ActionButton } from '@/shared/components/ui/ActionButton';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
+import { buttonBorderStyles } from '@/shared/lib/styles';
+
+export type BlitzGameMode = 'Pick' | 'Type';
 
 export interface TimedChallengeConfig<T> {
   // Identity
@@ -31,6 +36,7 @@ export interface TimedChallengeConfig<T> {
 
   // Data
   items: T[];
+  selectedSets?: string[]; // e.g. ["Set 1", "Set 2"] for displaying selected levels
   generateQuestion: (items: T[]) => T;
 
   // Display
@@ -39,9 +45,14 @@ export interface TimedChallengeConfig<T> {
   inputPlaceholder: string;
   modeDescription: string;
 
-  // Validation
+  // Validation (for Type mode)
   checkAnswer: (question: T, answer: string) => boolean;
   getCorrectAnswer: (question: T) => string;
+
+  // Pick mode support
+  generateOptions?: (question: T, items: T[], count: number) => string[];
+  renderOption?: (option: string, items: T[]) => React.ReactNode;
+  getCorrectOption?: (question: T) => string;
 
   // Stats
   stats: {
@@ -70,15 +81,37 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
     localStorageKey,
     goalTimerContext,
     items,
+    selectedSets,
     generateQuestion,
     renderQuestion,
     getAudioText,
     inputPlaceholder,
-    modeDescription,
     checkAnswer,
     getCorrectAnswer,
+    generateOptions,
+    renderOption,
+    getCorrectOption,
     stats
   } = config;
+
+  // Game mode state - load from localStorage
+  const [gameMode, setGameMode] = useState<BlitzGameMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`${localStorageKey}_gameMode`);
+      return (saved as BlitzGameMode) || 'Type';
+    }
+    return 'Type';
+  });
+
+  // Save game mode to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`${localStorageKey}_gameMode`, gameMode);
+    }
+  }, [gameMode, localStorageKey]);
+
+  // Check if Pick mode is supported
+  const pickModeSupported = !!(generateOptions && getCorrectOption);
 
   // Load saved duration from localStorage
   const [challengeDuration, setChallengeDuration] = useState(() => {
@@ -108,6 +141,13 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
   const [showGoalTimers, setShowGoalTimers] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Pick mode state
+  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+  const [wrongSelectedAnswers, setWrongSelectedAnswers] = useState<string[]>(
+    []
+  );
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
   // Calculate elapsed time for goal timers
   const elapsedTime = challengeDuration - timeLeft;
 
@@ -121,11 +161,32 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
     }
   });
 
+  // Store generateQuestion in a ref to avoid re-running effects when it changes
+  const generateQuestionRef = useRef(generateQuestion);
+  generateQuestionRef.current = generateQuestion;
+
+  // Store generateOptions in a ref to avoid re-running effects when it changes
+  const generateOptionsRef = useRef(generateOptions);
+  generateOptionsRef.current = generateOptions;
+
   useEffect(() => {
-    if (items.length > 0) {
-      setCurrentQuestion(generateQuestion(items));
+    if (items.length > 0 && !currentQuestion) {
+      setCurrentQuestion(generateQuestionRef.current(items));
     }
-  }, [items, generateQuestion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  // Generate shuffled options when question changes (Pick mode)
+  useEffect(() => {
+    if (currentQuestion && gameMode === 'Pick' && generateOptionsRef.current) {
+      const options = generateOptionsRef.current(currentQuestion, items, 3);
+      // Shuffle options
+      const shuffled = [...options].sort(() => Math.random() - 0.5);
+      setShuffledOptions(shuffled);
+      setWrongSelectedAnswers([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestion, gameMode]);
 
   useEffect(() => {
     if (timeLeft === 0 && !isFinished) {
@@ -135,10 +196,33 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
   }, [timeLeft, isFinished]);
 
   useEffect(() => {
-    if (isRunning && inputRef.current) {
+    if (isRunning && gameMode === 'Type' && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [isRunning, currentQuestion]);
+  }, [isRunning, currentQuestion, gameMode]);
+
+  // Keyboard shortcuts for Pick mode (1, 2, 3 keys)
+  useEffect(() => {
+    if (!isRunning || gameMode !== 'Pick') return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const keyMap: Record<string, number> = {
+        Digit1: 0,
+        Digit2: 1,
+        Digit3: 2,
+        Numpad1: 0,
+        Numpad2: 1,
+        Numpad3: 2
+      };
+      const index = keyMap[event.code];
+      if (index !== undefined && index < shuffledOptions.length) {
+        buttonRefs.current[index]?.click();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRunning, gameMode, shuffledOptions.length]);
 
   const handleStart = () => {
     playClick();
@@ -146,12 +230,13 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
     setIsFinished(false);
     setUserAnswer('');
     setLastAnswerCorrect(null);
-    setCurrentQuestion(generateQuestion(items));
+    setWrongSelectedAnswers([]);
+    setCurrentQuestion(generateQuestionRef.current(items));
     goalTimers.resetGoals();
     resetTimer();
     setTimeout(() => startTimer(), 50);
     setTimeout(() => {
-      if (inputRef.current) {
+      if (gameMode === 'Type' && inputRef.current) {
         inputRef.current.focus();
         inputRef.current.scrollIntoView({
           behavior: 'smooth',
@@ -167,8 +252,10 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
     setIsFinished(false);
     setUserAnswer('');
     setLastAnswerCorrect(null);
+    setWrongSelectedAnswers([]);
   };
 
+  // Type mode submit handler
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!currentQuestion || !userAnswer.trim()) return;
@@ -181,7 +268,7 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
       stats.incrementCorrect();
       setLastAnswerCorrect(true);
       setTimeout(() => {
-        setCurrentQuestion(generateQuestion(items));
+        setCurrentQuestion(generateQuestionRef.current(items));
         setLastAnswerCorrect(null);
       }, 300);
     } else {
@@ -193,6 +280,33 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
     setUserAnswer('');
   };
 
+  // Pick mode option click handler
+  const handleOptionClick = (selectedOption: string) => {
+    if (!currentQuestion || !getCorrectOption) return;
+
+    const correctOption = getCorrectOption(currentQuestion);
+    const isCorrect = selectedOption === correctOption;
+
+    if (isCorrect) {
+      playCorrect();
+      stats.incrementCorrect();
+      setLastAnswerCorrect(true);
+      setWrongSelectedAnswers([]);
+      setTimeout(() => {
+        setCurrentQuestion(generateQuestionRef.current(items));
+        setLastAnswerCorrect(null);
+      }, 300);
+    } else {
+      // Wrong answer - disable the option but don't reroll the question
+      // User can keep trying until they get it right
+      playError();
+      stats.incrementWrong();
+      setWrongSelectedAnswers(prev => [...prev, selectedOption]);
+      setLastAnswerCorrect(false);
+      // Don't reset lastAnswerCorrect immediately - let user see feedback
+    }
+  };
+
   const totalAnswers = stats.correct + stats.wrong;
   const accuracy =
     totalAnswers > 0 ? Math.round((stats.correct / totalAnswers) * 100) : 0;
@@ -201,10 +315,10 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
   if (items.length === 0) {
     return (
       <div className='min-h-[100dvh] flex flex-col items-center justify-center p-4'>
-        <div className='max-w-md text-center space-y-6'>
+        <div className='max-w-md text-center space-y-4'>
           <Timer size={64} className='mx-auto text-[var(--main-color)]' />
           <h1 className='text-2xl font-bold text-[var(--secondary-color)]'>
-            Timed Challenge
+            Blitz
           </h1>
           <p className='text-[var(--muted-color)]'>
             Please select some {dojoLabel.toLowerCase()} first to begin the
@@ -231,52 +345,182 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
 
   // Pre-game interstitial
   if (!isRunning && !isFinished) {
+    const gameModes: {
+      id: BlitzGameMode;
+      title: string;
+      description: string;
+      icon: typeof MousePointerClick;
+    }[] = [
+      {
+        id: 'Pick',
+        title: 'Pick',
+        description: 'Pick the correct answer from multiple options',
+        icon: MousePointerClick
+      },
+      {
+        id: 'Type',
+        title: 'Type',
+        description: 'Type the correct answer',
+        icon: Keyboard
+      }
+    ];
+
     return (
       <div className='min-h-[100dvh] flex flex-col lg:flex-row items-start justify-center p-4 gap-6'>
-        <div className='max-w-md w-full lg:max-w-lg text-center space-y-6'>
+        <div className='max-w-md w-full lg:max-w-lg text-center space-y-5'>
           <Timer size={64} className='mx-auto text-[var(--main-color)]' />
           <h1 className='text-2xl font-bold text-[var(--secondary-color)]'>
-            Timed Challenge
+            Blitz
           </h1>
           <p className='text-[var(--muted-color)]'>
             Test your {dojoLabel.toLowerCase()} recognition speed! Answer as
             many questions as possible before time runs out.
           </p>
 
-          <div className='bg-[var(--card-color)] rounded-lg p-4 space-y-2'>
-            <p className='text-sm text-[var(--muted-color)]'>Selected:</p>
-            <p className='font-medium text-[var(--secondary-color)]'>
-              {items.length} {dojoLabel.toLowerCase()}
-            </p>
+          {/* Selected Levels */}
+          <div className='bg-[var(--card-color)] rounded-lg p-4'>
+            <div className='flex flex-row items-start gap-2'>
+              <CheckCircle2
+                className='text-[var(--secondary-color)] shrink-0 mt-0.5'
+                size={20}
+              />
+              <span className='text-sm whitespace-nowrap'>
+                Selected Levels:
+              </span>
+              {/* Compact form on small screens: "1, 2, 3" */}
+              <span className='text-[var(--secondary-color)] text-sm break-words md:hidden'>
+                {selectedSets && selectedSets.length > 0
+                  ? selectedSets
+                      .sort((a, b) => {
+                        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                        return numA - numB;
+                      })
+                      .map(set => set.replace('Set ', '').replace('Level ', ''))
+                      .join(', ')
+                  : `${items.length} ${dojoLabel.toLowerCase()}`}
+              </span>
+              {/* Full form on md+ screens: "Level 1, Level 2" */}
+              <span className='text-[var(--secondary-color)] text-sm break-words hidden md:inline'>
+                {selectedSets && selectedSets.length > 0
+                  ? selectedSets
+                      .sort((a, b) => {
+                        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                        return numA - numB;
+                      })
+                      .map(
+                        set =>
+                          `Level ${set
+                            .replace('Set ', '')
+                            .replace('Level ', '')}`
+                      )
+                      .join(', ')
+                  : `${items.length} ${dojoLabel.toLowerCase()}`}
+              </span>
+            </div>
           </div>
 
-          <div className='bg-[var(--card-color)] rounded-lg p-3'>
-            <p className='text-sm text-[var(--main-color)] font-medium'>
-              ℹ️ {modeDescription}
-            </p>
+          {/* Game Mode Selection */}
+          <div className='space-y-3'>
+            {gameModes.map(mode => {
+              const isSelected = mode.id === gameMode;
+              const Icon = mode.icon;
+              const isDisabled = mode.id === 'Pick' && !pickModeSupported;
+
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => {
+                    if (!isDisabled) {
+                      playClick();
+                      setGameMode(mode.id);
+                    }
+                  }}
+                  disabled={isDisabled}
+                  className={clsx(
+                    'w-full p-4 rounded-xl text-left hover:cursor-pointer',
+                    'border-2 flex items-center gap-4 bg-[var(--card-color)]',
+                    isDisabled && 'opacity-50 cursor-not-allowed',
+                    isSelected
+                      ? 'border-[var(--main-color)]'
+                      : 'border-[var(--border-color)]'
+                  )}
+                >
+                  <div
+                    className={clsx(
+                      'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+                      isSelected
+                        ? 'bg-[var(--main-color)] text-[var(--background-color)]'
+                        : 'bg-[var(--border-color)] text-[var(--muted-color)]'
+                    )}
+                  >
+                    <Icon size={20} />
+                  </div>
+                  <div className='flex-1 min-w-0'>
+                    <h3 className='text-base font-medium text-[var(--main-color)]'>
+                      {mode.title}
+                    </h3>
+                    <p className='text-xs text-[var(--secondary-color)]'>
+                      {mode.description}
+                    </p>
+                  </div>
+                  <div
+                    className={clsx(
+                      'w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center',
+                      isSelected
+                        ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)]'
+                        : 'border-[var(--border-color)]'
+                    )}
+                  >
+                    {isSelected && (
+                      <svg
+                        className='w-3 h-3 text-[var(--background-color)]'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={3}
+                          d='M5 13l4 4L19 7'
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <div className='bg-[var(--card-color)] rounded-lg p-4 space-y-3'>
             <p className='text-sm font-medium text-[var(--secondary-color)]'>
-              Challenge Duration:
+              Duration:
             </p>
             <div className='flex gap-2 justify-center flex-wrap'>
               {[30, 60, 90, 120, 180].map(duration => (
-                <button
+                <ActionButton
                   key={duration}
                   onClick={() => {
                     playClick();
                     setChallengeDuration(duration);
                   }}
+                  colorScheme={
+                    challengeDuration === duration ? 'main' : 'secondary'
+                  }
+                  borderColorScheme={
+                    challengeDuration === duration ? 'main' : 'secondary'
+                  }
+                  borderBottomThickness={4}
+                  borderRadius='lg'
                   className={clsx(
-                    'px-4 py-2 rounded-lg border-2 transition-all',
-                    challengeDuration === duration
-                      ? 'border-[var(--main-color)] bg-[var(--main-color)]/10 text-[var(--main-color)] font-bold'
-                      : 'border-[var(--border-color)] hover:bg-[var(--border-color)]'
+                    'px-4 py-2 w-auto',
+                    challengeDuration !== duration && 'opacity-60'
                   )}
                 >
                   {duration < 60 ? `${duration}s` : `${duration / 60}m`}
-                </button>
+                </ActionButton>
               ))}
             </div>
           </div>
@@ -596,49 +840,103 @@ export default function TimedChallenge<T>({ config }: TimedChallengeProps<T>) {
             )}
           </div>
 
-          {/* Feedback */}
-          {lastAnswerCorrect !== null && currentQuestion && (
-            <div
-              className={clsx(
-                'text-sm font-medium',
-                lastAnswerCorrect ? 'text-green-500' : 'text-red-500'
-              )}
-            >
-              {lastAnswerCorrect
-                ? '✓ Correct!'
-                : `✗ Incorrect! It was "${getCorrectAnswer(currentQuestion)}"`}
-            </div>
-          )}
+          {/* Feedback - fixed height to prevent layout shift */}
+          <div className='h-6 flex items-center justify-center'>
+            {lastAnswerCorrect !== null && currentQuestion && (
+              <div
+                className={clsx(
+                  'text-sm font-medium',
+                  lastAnswerCorrect ? 'text-green-500' : 'text-red-500'
+                )}
+              >
+                {lastAnswerCorrect
+                  ? '✓ Correct!'
+                  : gameMode === 'Pick'
+                  ? '✗ Try again!'
+                  : `✗ Incorrect! It was "${getCorrectAnswer(
+                      currentQuestion
+                    )}"`}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Input form */}
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          <input
-            ref={inputRef}
-            type='text'
-            value={userAnswer}
-            onChange={e => setUserAnswer(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSubmit()}
-            className='w-full p-4 text-lg text-center border-2 border-[var(--border-color)] rounded-lg bg-[var(--card-color)] text-[var(--secondary-color)] focus:border-[var(--main-color)] focus:outline-none'
-            placeholder={inputPlaceholder}
-            autoComplete='off'
-            autoFocus
-          />
-          <button
-            type='submit'
-            disabled={!userAnswer.trim()}
-            className={clsx(
-              'w-full h-12 px-6 flex flex-row justify-center items-center gap-2',
-              'rounded-2xl transition-colors duration-200',
-              'font-medium border-b-6 shadow-sm',
-              userAnswer.trim()
-                ? 'bg-[var(--main-color)] text-[var(--background-color)] border-[var(--main-color-accent)] hover:cursor-pointer'
-                : 'bg-[var(--card-color)] text-[var(--border-color)] border-[var(--border-color)] cursor-not-allowed'
-            )}
-          >
-            Submit
-          </button>
-        </form>
+        {/* Type mode: Input form */}
+        {gameMode === 'Type' && (
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            <input
+              ref={inputRef}
+              type='text'
+              value={userAnswer}
+              onChange={e => setUserAnswer(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleSubmit()}
+              className='w-full p-4 text-lg text-center border-2 border-[var(--border-color)] rounded-lg bg-[var(--card-color)] text-[var(--secondary-color)] focus:border-[var(--main-color)] focus:outline-none'
+              placeholder={inputPlaceholder}
+              autoComplete='off'
+              autoFocus
+            />
+            <button
+              type='submit'
+              disabled={!userAnswer.trim()}
+              className={clsx(
+                'w-full h-12 px-6 flex flex-row justify-center items-center gap-2',
+                'rounded-2xl transition-colors duration-200',
+                'font-medium border-b-6 shadow-sm',
+                userAnswer.trim()
+                  ? 'bg-[var(--main-color)] text-[var(--background-color)] border-[var(--main-color-accent)] hover:cursor-pointer'
+                  : 'bg-[var(--card-color)] text-[var(--border-color)] border-[var(--border-color)] cursor-not-allowed'
+              )}
+            >
+              Submit
+            </button>
+          </form>
+        )}
+
+        {/* Pick mode: Option buttons */}
+        {gameMode === 'Pick' && (
+          <div className='flex flex-col w-full gap-4'>
+            {shuffledOptions.map((option, i) => {
+              const isWrong = wrongSelectedAnswers.includes(option);
+              return (
+                <button
+                  ref={elem => {
+                    buttonRefs.current[i] = elem;
+                  }}
+                  key={option + i}
+                  type='button'
+                  disabled={isWrong}
+                  className={clsx(
+                    'py-5 pl-8 rounded-xl w-full flex flex-row justify-start items-center gap-1.5',
+                    buttonBorderStyles,
+                    'active:scale-95 md:active:scale-98 active:duration-200',
+                    'text-[var(--border-color)]',
+                    'border-b-4',
+                    'text-2xl md:text-3xl',
+                    isWrong &&
+                      'hover:bg-[var(--card-color)] border-[var(--border-color)]',
+                    !isWrong &&
+                      'text-[var(--secondary-color)] border-[var(--secondary-color)]/50 hover:border-[var(--secondary-color)]'
+                  )}
+                  onClick={() => handleOptionClick(option)}
+                >
+                  <span className='flex-1 text-left'>
+                    {renderOption ? renderOption(option, items) : option}
+                  </span>
+                  <span
+                    className={clsx(
+                      'hidden lg:inline text-xs rounded-full bg-[var(--border-color)] px-1 mr-4',
+                      isWrong
+                        ? 'text-[var(--border-color)]'
+                        : 'text-[var(--secondary-color)]'
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Real-time stats */}
         <div className='grid grid-cols-3 gap-2 text-center text-sm'>

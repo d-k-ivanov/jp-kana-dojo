@@ -12,6 +12,7 @@ import FuriganaText from '@/shared/components/FuriganaText';
 
 export default function TimedChallengeVocab() {
   const selectedVocabObjs = useVocabStore(state => state.selectedVocabObjs);
+  const selectedVocabSets = useVocabStore(state => state.selectedVocabSets);
 
   const {
     timedVocabCorrectAnswers,
@@ -29,18 +30,30 @@ export default function TimedChallengeVocab() {
     localStorageKey: 'timedVocabChallengeDuration',
     goalTimerContext: 'Vocabulary Timed Challenge',
     items: selectedVocabObjs,
+    selectedSets: selectedVocabSets,
     generateQuestion: items => items[Math.floor(Math.random() * items.length)],
     renderQuestion: question => (
       <FuriganaText text={question.word} reading={question.reading} />
     ),
     getAudioText: question => question.word,
     inputPlaceholder: 'Type the meaning...',
-    modeDescription: 'Mode: Input (See Japanese word → Type meaning)',
+    modeDescription: 'Mode: Type (See Japanese word → Type meaning)',
     checkAnswer: (question, answer) =>
       question.meanings.some(
         meaning => answer.toLowerCase() === meaning.toLowerCase()
       ),
     getCorrectAnswer: question => question.meanings[0],
+    // Pick mode support
+    generateOptions: (question, items, count) => {
+      const correctAnswer = question.meanings[0];
+      const incorrectOptions = items
+        .filter(item => item.word !== question.word)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, count - 1)
+        .map(item => item.meanings[0]);
+      return [correctAnswer, ...incorrectOptions];
+    },
+    getCorrectOption: question => question.meanings[0],
     stats: {
       correct: timedVocabCorrectAnswers,
       wrong: timedVocabWrongAnswers,
