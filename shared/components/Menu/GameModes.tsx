@@ -22,7 +22,7 @@ interface GameModesProps {
   isOpen: boolean;
   onClose: () => void;
   currentDojo: string;
-  mode?: 'train' | 'blitz';
+  mode?: 'train' | 'blitz' | 'gauntlet';
 }
 
 const GameModes = ({
@@ -269,9 +269,13 @@ const GameModes = ({
         if (mode === 'blitz') {
           persistDuration(challengeDuration);
         }
-        router.push(
-          mode === 'blitz' ? `/${currentDojo}/blitz` : `/${currentDojo}/train`
-        );
+        const route =
+          mode === 'blitz'
+            ? `/${currentDojo}/blitz`
+            : mode === 'gauntlet'
+              ? `/${currentDojo}/gauntlet`
+              : `/${currentDojo}/train`;
+        router.push(route);
       }
     };
 
@@ -328,7 +332,12 @@ const GameModes = ({
           <div className='space-y-3 text-center'>
             <Play size={56} className='mx-auto text-[var(--main-color)]' />
             <h1 className='text-2xl font-bold text-[var(--secondary-color)]'>
-              {dojoLabel} {mode === 'blitz' ? 'Blitz' : 'Training'}
+              {dojoLabel}{' '}
+              {mode === 'blitz'
+                ? 'Blitz'
+                : mode === 'gauntlet'
+                  ? 'Gauntlet'
+                  : 'Training'}
             </h1>
             <p className='text-[var(--muted-color)]'>
               Choose your training mode
@@ -480,7 +489,9 @@ const GameModes = ({
               href={
                 mode === 'blitz'
                   ? `/${currentDojo}/blitz`
-                  : `/${currentDojo}/train`
+                  : mode === 'gauntlet'
+                    ? `/${currentDojo}/gauntlet`
+                    : `/${currentDojo}/train`
               }
               className='w-1/2'
               onClick={e => {
@@ -507,7 +518,11 @@ const GameModes = ({
                 )}
               >
                 <span className='whitespace-nowrap'>
-                  {mode === 'blitz' ? 'Start Blitz' : 'Start Training'}
+                  {mode === 'blitz'
+                    ? 'Start Blitz'
+                    : mode === 'gauntlet'
+                      ? 'Start Gauntlet'
+                      : 'Start Training'}
                 </span>
                 <Play
                   className={clsx(selectedGameMode && 'fill-current')}
