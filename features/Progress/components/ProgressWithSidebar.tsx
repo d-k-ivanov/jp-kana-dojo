@@ -40,7 +40,7 @@ const ProgressWithSidebar = () => {
       <div className={cn('flex justify-center px-2')}>
         <div
           className={cn(
-            'inline-flex flex-wrap justify-center gap-2 rounded-2xl border border-[var(--border-color)] bg-[var(--card-color)] p-2 '
+            'inline-flex flex-wrap justify-center gap-2 rounded-3xl border-0 border-[var(--border-color)] bg-[var(--card-color)] p-2'
           )}
         >
           {viewOptions.map(option => {
@@ -55,8 +55,9 @@ const ProgressWithSidebar = () => {
                 colorScheme={isSelected ? 'main' : undefined}
                 borderColorScheme={isSelected ? 'main' : undefined}
                 borderBottomThickness={isSelected ? 8 : 0}
+                borderRadius='3xl'
                 className={cn(
-                  'w-auto gap-1.5 px-5 py-2.5 text-sm sm:gap-2',
+                  'w-auto gap-1.5 px-6 py-4 text-sm sm:gap-2',
                   !isSelected &&
                     'bg-transparent text-[var(--secondary-color)] hover:bg-[var(--border-color)]/50 hover:text-[var(--main-color)]'
                 )}

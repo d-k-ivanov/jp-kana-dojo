@@ -47,7 +47,7 @@ export default function StreakProgress() {
 
       {/* Period Selector */}
       <div className='flex justify-center'>
-        <div className='inline-flex rounded-2xl bg-[var(--card-color)] border border-[var(--border-color)] p-2 gap-2'>
+        <div className='inline-flex rounded-3xl bg-[var(--card-color)] border-0 border-[var(--border-color)] p-2 gap-2'>
           {periodOptions.map(option => {
             const isSelected = period === option.value;
             return (

@@ -408,6 +408,8 @@ const AchievementProgress = () => {
                     onClick={() => handleCategorySelect(category.id)}
                     colorScheme={isSelected ? 'main' : 'secondary'}
                     borderColorScheme={isSelected ? 'main' : 'secondary'}
+                    borderBottomThickness={8}
+                    borderRadius='3xl'
                     className='w-auto px-4 py-3 text-base font-medium'
                   >
                     <CategoryIcon size={18} />

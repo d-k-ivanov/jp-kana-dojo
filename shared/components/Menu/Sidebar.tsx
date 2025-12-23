@@ -3,7 +3,7 @@ import { Link, useRouter, usePathname } from '@/core/i18n/routing';
 import {
   BookOpen,
   Brain,
-  CircleDashed,
+  CircleStar,
   CloudRain,
   House,
   Keyboard,
@@ -12,13 +12,158 @@ import {
   Sparkles,
   Star,
   Volume2,
-  Wind
+  Wind,
+  LucideIcon
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useClick } from '@/shared/hooks/useAudio';
-import { useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import usePreferencesStore from '@/features/Preferences/store/usePreferencesStore';
 import { removeLocaleFromPath } from '@/shared/lib/pathUtils';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon?: LucideIcon | null;
+  /** Japanese character to use as icon (e.g., あ, 語, 字) */
+  charIcon?: string;
+  /** Custom icon class overrides */
+  iconClassName?: string;
+  /** Whether to animate the icon when not active */
+  animateWhenInactive?: boolean;
+};
+
+type NavSection = {
+  title: string;
+  items: NavItem[];
+};
+
+// ============================================================================
+// Navigation Data
+// ============================================================================
+
+const mainNavItems: NavItem[] = [
+  { href: '/', label: 'Home', icon: House },
+  { href: '/progress', label: 'Progress', icon: CircleStar },
+  { href: '/kana', label: 'Kana', charIcon: 'あ' },
+  { href: '/vocabulary', label: ' Vocabulary', charIcon: '語' },
+  { href: '/kanji', label: ' Kanji', charIcon: '字' },
+  {
+    href: '/preferences',
+    label: 'Preferences',
+    icon: Sparkles,
+    animateWhenInactive: true
+  }
+];
+
+const secondaryNavSections: NavSection[] = [
+  {
+    title: 'Academy',
+    items: [{ href: '/academy', label: 'Guides', icon: BookOpen }]
+  },
+  {
+    title: 'Tools',
+    items: [{ href: '/translate', label: 'Translate', icon: Languages }]
+  },
+  {
+    title: 'Experiments',
+    items: [
+      { href: '/experiments', label: 'All Experiments', icon: Sparkles },
+      { href: '/zen', label: 'Zen Mode', icon: Leaf },
+      { href: '/experiments/breathing', label: 'Breathing', icon: Wind },
+      { href: '/experiments/ambient', label: 'Ambient', icon: Sparkles },
+      { href: '/experiments/rain', label: 'Kana Rain', icon: CloudRain },
+      { href: '/experiments/sound', label: 'Sound Garden', icon: Volume2 },
+      { href: '/experiments/haiku', label: 'Haiku Garden', icon: BookOpen },
+      {
+        href: '/experiments/constellation',
+        label: 'Constellation',
+        icon: Star
+      },
+      { href: '/experiments/typing', label: 'Speed Typing', icon: Keyboard },
+      { href: '/experiments/memory', label: 'Memory Palace', icon: Brain },
+      { href: '/calligraphy', label: ' Calligraphy', charIcon: '書' }
+    ]
+  }
+];
+
+// ============================================================================
+// Subcomponents
+// ============================================================================
+
+type NavLinkProps = {
+  item: NavItem;
+  isActive: boolean;
+  onClick: () => void;
+  variant: 'main' | 'secondary';
+};
+
+const NavLink = ({ item, isActive, onClick, variant }: NavLinkProps) => {
+  const Icon = item.icon;
+  const isMain = variant === 'main';
+
+  const baseClasses = clsx(
+    'flex items-center gap-2 rounded-xl transition-all duration-250',
+    isMain
+      ? 'text-2xl max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2'
+      : 'w-full px-4 py-2 text-xl max-lg:hidden'
+  );
+
+  const stateClasses = isActive
+    ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
+    : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]';
+
+  const renderIcon = (): ReactNode => {
+    if (item.charIcon) {
+      return item.charIcon;
+    }
+
+    if (Icon) {
+      return (
+        <Icon
+          className={clsx(
+            'shrink-0',
+            item.animateWhenInactive &&
+              !isActive &&
+              'motion-safe:animate-bounce',
+            item.iconClassName
+          )}
+        />
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <Link
+      href={item.href}
+      className={clsx(baseClasses, stateClasses)}
+      onClick={onClick}
+    >
+      {renderIcon()}
+      <span className={isMain ? 'max-lg:hidden' : undefined}>{item.label}</span>
+    </Link>
+  );
+};
+
+type SectionHeaderProps = {
+  title: string;
+};
+
+const SectionHeader = ({ title }: SectionHeaderProps) => (
+  <div className='mt-3 w-full px-4 text-xs text-[var(--main-color)] uppercase opacity-70 max-lg:hidden'>
+    {title}
+  </div>
+);
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 const Sidebar = () => {
   const router = useRouter();
@@ -26,7 +171,6 @@ const Sidebar = () => {
   const pathWithoutLocale = removeLocaleFromPath(pathname);
 
   const hotkeysOn = usePreferencesStore(state => state.hotkeysOn);
-
   const { playClick } = useClick();
 
   const escButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -60,6 +204,8 @@ const Sidebar = () => {
     };
   }, [hotkeysOn, router]);
 
+  const isActive = (href: string) => pathWithoutLocale === href;
+
   return (
     <div
       id='main-sidebar'
@@ -75,6 +221,7 @@ const Sidebar = () => {
         'lg:pb-12'
       )}
     >
+      {/* Logo */}
       <h1
         className={clsx(
           'flex items-center gap-1.5 pl-4 text-3xl',
@@ -82,273 +229,37 @@ const Sidebar = () => {
         )}
       >
         <span className='font-bold'>KanaDojo</span>
-        <span className={clsx('font-normal text-[var(--secondary-color)]')}>
+        <span className='font-normal text-[var(--secondary-color)]'>
           かな道場️
         </span>
       </h1>
-      <Link
-        href='/'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:p-3 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <House className='' />
-        <span className='max-lg:hidden'>Home</span>
-      </Link>
-      <Link
-        href='/progress'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/progress'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <CircleDashed />
-        <span className='max-lg:hidden'>Progress</span>
-      </Link>
-      <Link
-        href='/kana'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/kana'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        あ<span className='max-lg:hidden'>Kana</span>
-      </Link>
 
-      <Link
-        href='/vocabulary'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/vocabulary'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        語<span className='max-lg:hidden'> Vocabulary</span>
-      </Link>
-
-      <Link
-        href='/kanji'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/kanji'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        字<span className='max-lg:hidden'> Kanji</span>
-      </Link>
-      <Link
-        href='/preferences'
-        className={clsx(
-          'flex items-center gap-2 rounded-xl text-2xl transition-all duration-250 max-lg:justify-center max-lg:px-3 max-lg:py-2 lg:w-full lg:px-4 lg:py-2',
-          pathWithoutLocale === '/preferences'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Sparkles
-          // size={32}
-          className={clsx(
-            'shrink-0',
-            pathWithoutLocale !== '/preferences' && 'motion-safe:animate-bounce'
-          )}
+      {/* Main Navigation */}
+      {mainNavItems.map(item => (
+        <NavLink
+          key={item.href}
+          item={item}
+          isActive={isActive(item.href)}
+          onClick={playClick}
+          variant='main'
         />
-        <span className='max-lg:hidden'>Preferences</span>
-      </Link>
+      ))}
 
-      <div className='mt-3 w-full px-4 text-xs text-[var(--main-color)] uppercase opacity-70 max-lg:hidden'>
-        Academy
-      </div>
-      <Link
-        href='/academy'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/academy'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <BookOpen className='shrink-0' />
-        <span>Guides</span>
-      </Link>
-
-      <div className='mt-3 w-full px-4 text-xs text-[var(--main-color)] uppercase opacity-70 max-lg:hidden'>
-        Tools
-      </div>
-      <Link
-        href='/translate'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/translate'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Languages className='shrink-0' />
-        <span>Translate</span>
-      </Link>
-
-      <div className='mt-3 w-full px-4 text-xs text-[var(--main-color)] uppercase opacity-70 max-lg:hidden'>
-        Experiments
-      </div>
-      <Link
-        href='/experiments'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Sparkles className='shrink-0' />
-        <span>All Experiments</span>
-      </Link>
-      <Link
-        href='/zen'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/zen'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Leaf className='shrink-0' />
-        <span>Zen Mode</span>
-      </Link>
-      <Link
-        href='/experiments/breathing'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/breathing'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Wind className='shrink-0' />
-        <span>Breathing</span>
-      </Link>
-      <Link
-        href='/experiments/ambient'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/ambient'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Sparkles className='shrink-0' />
-        <span>Ambient</span>
-      </Link>
-      <Link
-        href='/experiments/rain'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/rain'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <CloudRain className='shrink-0' />
-        <span>Kana Rain</span>
-      </Link>
-      <Link
-        href='/experiments/sound'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/sound'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Volume2 className='shrink-0' />
-        <span>Sound Garden</span>
-      </Link>
-      <Link
-        href='/experiments/haiku'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/haiku'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <BookOpen className='shrink-0' />
-        <span>Haiku Garden</span>
-      </Link>
-      <Link
-        href='/experiments/constellation'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/constellation'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Star className='shrink-0' />
-        <span>Constellation</span>
-      </Link>
-      <Link
-        href='/experiments/typing'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/typing'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Keyboard className='shrink-0' />
-        <span>Speed Typing</span>
-      </Link>
-      <Link
-        href='/experiments/memory'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/experiments/memory'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        <Brain className='shrink-0' />
-        <span>Memory Palace</span>
-      </Link>
-      <Link
-        href='/calligraphy'
-        className={clsx(
-          'flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xl transition-all duration-250 max-lg:hidden',
-          pathWithoutLocale === '/calligraphy'
-            ? 'bg-[var(--border-color)] text-[var(--main-color)] lg:bg-[var(--card-color)]'
-            : 'text-[var(--secondary-color)] hover:bg-[var(--card-color)]'
-        )}
-        onClick={playClick}
-      >
-        書<span> Calligraphy</span>
-      </Link>
+      {/* Secondary Navigation Sections */}
+      {secondaryNavSections.map(section => (
+        <div key={section.title} className='contents'>
+          <SectionHeader title={section.title} />
+          {section.items.map(item => (
+            <NavLink
+              key={item.href}
+              item={item}
+              isActive={isActive(item.href)}
+              onClick={playClick}
+              variant='secondary'
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 };
