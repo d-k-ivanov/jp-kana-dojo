@@ -270,6 +270,12 @@ const baseThemeSets: BaseThemeGroup[] = [
         mainColor: 'oklch(70.0% 0.215 25.0 / 1)',
         secondaryColor: 'oklch(85.0% 0.055 95.0 / 1)'
       },
+      {
+        id: 'morning-fog',
+        backgroundColor: 'oklch(22.0% 0.010 240.0 / 1)',
+        mainColor: 'oklch(78.0% 0.030 220.0 / 1)',
+        secondaryColor: 'oklch(65.0% 0.040 260.0 / 1)'
+      },
     ],
   },
 
