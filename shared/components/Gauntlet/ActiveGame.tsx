@@ -697,7 +697,7 @@ export default function ActiveGame<T>({
           state={bottomBarState}
           onAction={showContinue || showTryAgain ? handleContinue : handleCheck}
           canCheck={canCheck}
-          feedbackTitle={showContinue ? 'Correct!' : 'Wrong!'}
+          feedbackTitle={showContinue ? 'Correct!' : showTryAgain ? 'Wrong!' : ''}
           feedbackContent={
             showTryAgain && currentQuestion
               ? isTypeMode && getCorrectAnswer
@@ -707,6 +707,7 @@ export default function ActiveGame<T>({
           }
           buttonRef={buttonRef}
           actionLabel={showContinue ? 'next' : showTryAgain ? 'next' : 'check'}
+          hideRetry
         />
 
         {/* Spacer */}
