@@ -261,12 +261,12 @@
     "id": 44,
     "fact": "Japan has a unique 4-4-9 emergency number system: 110 for police, 119 for fire/ambulance, and 118 for coast guard emergencies.",
     "issued": false,
-    "completed": false
+    "completed": true
   },
   {
     "id": 45,
     "fact": "The Japanese word 'mono no aware' (ç‰©ã®å“€ã‚Œ) describes the bittersweetness of passing time and the gentle sadness of things.",
-    "issued": false,
+    "issued": true,
     "completed": false
   },
   {
