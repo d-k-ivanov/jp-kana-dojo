@@ -57,7 +57,7 @@ export default function FAQ({
     <section
       className={cn(
         'mt-8 rounded-2xl',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'p-6 sm:p-8',
       )}
       aria-labelledby='faq-heading'
@@ -79,7 +79,6 @@ export default function FAQ({
             onClick={expandAll}
             className={cn(
               'rounded-lg px-3 py-1.5 text-xs font-medium',
-              'border border-(--border-color)',
               'text-(--secondary-color)',
               'hover:bg-(--border-color)/50',
               'transition-colors duration-200',
@@ -93,7 +92,6 @@ export default function FAQ({
             onClick={collapseAll}
             className={cn(
               'rounded-lg px-3 py-1.5 text-xs font-medium',
-              'border border-(--border-color)',
               'text-(--secondary-color)',
               'hover:bg-(--border-color)/50',
               'transition-colors duration-200',
@@ -126,7 +124,6 @@ export default function FAQ({
             onClick={() => setShowAll(!showAll)}
             className={cn(
               'rounded-lg px-4 py-2 text-sm font-medium',
-              'border border-(--main-color)/30',
               'text-(--main-color)',
               'hover:bg-(--main-color)/10',
               'transition-colors duration-200',
@@ -164,7 +161,6 @@ function FAQItemComponent({
     <div
       className={cn(
         'rounded-xl',
-        'border border-(--border-color)',
         'overflow-hidden',
         'transition-colors duration-200',
         isExpanded && 'bg-(--background-color)',

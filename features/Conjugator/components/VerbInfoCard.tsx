@@ -30,7 +30,7 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
     <div
       className={cn(
         'flex flex-col rounded-2xl',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'shadow-lg shadow-black/5',
         'overflow-hidden',
       )}
@@ -41,14 +41,13 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
       <div className='flex flex-col gap-3 p-4 sm:p-5'>
         {/* Header with verb */}
         <div className='flex items-center gap-3'>
-          <div
-            className={cn(
-              'rounded-lg p-2',
-              'bg-(--main-color)/10',
-              'border border-(--main-color)/20',
-            )}
-            aria-hidden='true'
-          >
+        <div
+          className={cn(
+            'rounded-lg p-2',
+            'bg-(--main-color)/10',
+          )}
+          aria-hidden='true'
+        >
             <BookOpen className='h-5 w-5 text-(--main-color)' />
           </div>
           <div className='min-w-0 flex-1'>
@@ -74,7 +73,7 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
           <div
             className={cn(
               'flex flex-col gap-1 rounded-xl p-3',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
             )}
           >
             <span className='text-xs font-medium tracking-wider text-(--secondary-color) uppercase'>
@@ -91,7 +90,7 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
           <div
             className={cn(
               'flex flex-col gap-1 rounded-xl p-3',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
             )}
           >
             <span className='text-xs font-medium tracking-wider text-(--secondary-color) uppercase'>
@@ -109,7 +108,7 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
           <div
             className={cn(
               'flex flex-col gap-1 rounded-xl p-3',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
               'col-span-2 sm:col-span-1',
             )}
           >
@@ -130,7 +129,7 @@ export default function VerbInfoCard({ verb }: VerbInfoCardProps) {
           <div
             className={cn(
               'flex items-center gap-2 rounded-xl p-3',
-              'border border-(--main-color)/30 bg-(--main-color)/10',
+              'bg-(--main-color)/10',
             )}
             role='note'
           >

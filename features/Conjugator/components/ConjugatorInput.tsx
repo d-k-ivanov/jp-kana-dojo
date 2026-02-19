@@ -83,7 +83,7 @@ export default function ConjugatorInput({
     <div
       className={cn(
         'flex w-full flex-col gap-4 rounded-2xl p-4 sm:p-5',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'shadow-lg shadow-black/5',
       )}
       role='search'
@@ -95,7 +95,6 @@ export default function ConjugatorInput({
           className={cn(
             'rounded-lg p-2',
             'bg-(--main-color)/10',
-            'border border-(--main-color)/20',
           )}
           aria-hidden='true'
         >
@@ -129,12 +128,12 @@ export default function ConjugatorInput({
           placeholder='日本語の動詞を入力...'
           className={cn(
             'h-12 w-full rounded-xl px-4 sm:h-14 sm:px-5',
-            'border border-(--border-color) bg-(--background-color)',
+            'bg-(--background-color)',
             'text-lg text-(--main-color) placeholder:text-(--secondary-color)/60 sm:text-xl',
             'font-japanese',
             'focus:border-transparent focus:ring-2 focus:ring-(--main-color) focus:outline-none',
             'transition-all duration-200',
-            error && 'border-red-500 focus:ring-red-500',
+            error && 'focus:ring-red-500',
             isDisabled && 'cursor-not-allowed opacity-60',
           )}
           aria-labelledby='verb-input-label'
@@ -175,7 +174,7 @@ export default function ConjugatorInput({
           id='input-error'
           className={cn(
             'flex items-center gap-2 rounded-lg p-3',
-            'border border-red-500/30 bg-red-500/10',
+            'bg-red-500/10',
             'text-sm text-red-500',
           )}
           role='alert'

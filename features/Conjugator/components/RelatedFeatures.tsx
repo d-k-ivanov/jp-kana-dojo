@@ -87,7 +87,7 @@ export default function RelatedFeatures({
     <section
       className={cn(
         'mt-8 rounded-2xl',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'p-6 sm:p-8',
       )}
       aria-labelledby='related-features-heading'
@@ -112,9 +112,7 @@ export default function RelatedFeatures({
                 href={getLocalizedHref(link.href)}
                 className={cn(
                   'flex h-full flex-col gap-3 rounded-xl p-4',
-                  'border border-(--border-color)',
                   'bg-(--background-color)',
-                  'hover:border-(--main-color)/50',
                   'hover:bg-(--main-color)/5',
                   'transition-colors duration-200',
                   'group',

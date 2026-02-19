@@ -22,7 +22,7 @@ export default function SEOContent({ verb }: SEOContentProps) {
     <section
       className={cn(
         'mt-8 rounded-2xl',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'p-6 sm:p-8',
       )}
       aria-labelledby='seo-content-heading'
@@ -69,7 +69,7 @@ export default function SEOContent({ verb }: SEOContentProps) {
           <div
             className={cn(
               'rounded-xl p-4',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
             )}
           >
             <h4 className='mb-2 font-semibold text-blue-500'>
@@ -86,7 +86,7 @@ export default function SEOContent({ verb }: SEOContentProps) {
           <div
             className={cn(
               'rounded-xl p-4',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
             )}
           >
             <h4 className='mb-2 font-semibold text-green-500'>
@@ -103,7 +103,7 @@ export default function SEOContent({ verb }: SEOContentProps) {
           <div
             className={cn(
               'rounded-xl p-4',
-              'border border-(--border-color) bg-(--background-color)',
+              'bg-(--background-color)',
             )}
           >
             <h4 className='mb-2 font-semibold text-purple-500'>
@@ -211,7 +211,7 @@ export default function SEOContent({ verb }: SEOContentProps) {
       <div
         className={cn(
           'mt-8 rounded-xl p-4',
-          'border border-(--main-color)/20 bg-(--main-color)/5',
+          'bg-(--main-color)/5',
         )}
         data-ai-content='true'
       >
@@ -244,7 +244,7 @@ function ConjugationFormExplanation({
     <div
       className={cn(
         'rounded-xl p-4',
-        'border border-(--border-color) bg-(--background-color)',
+        'bg-(--background-color)',
       )}
     >
       <h4 className='mb-1 font-semibold text-(--main-color)'>{name}</h4>

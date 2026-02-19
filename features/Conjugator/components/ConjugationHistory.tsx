@@ -51,7 +51,7 @@ export default function ConjugationHistory({
       <div
         className={cn(
           'flex flex-col items-center justify-center rounded-2xl py-8',
-          'border border-(--border-color) bg-(--card-color)',
+          'bg-(--card-color)',
           'text-(--secondary-color)',
         )}
         role='region'
@@ -78,7 +78,7 @@ export default function ConjugationHistory({
     <div
       className={cn(
         'flex flex-col gap-3 rounded-2xl p-4 sm:p-5',
-        'border border-(--border-color) bg-(--card-color)',
+        'bg-(--card-color)',
         'shadow-lg shadow-black/5',
       )}
       role='region'
@@ -87,14 +87,13 @@ export default function ConjugationHistory({
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
-          <div
-            className={cn(
-              'rounded-lg p-2',
-              'bg-(--main-color)/10',
-              'border border-(--main-color)/20',
-            )}
-            aria-hidden='true'
-          >
+        <div
+          className={cn(
+            'rounded-lg p-2',
+            'bg-(--main-color)/10',
+          )}
+          aria-hidden='true'
+        >
             <History className='h-5 w-5 text-(--main-color)' />
           </div>
           <div>
@@ -203,8 +202,8 @@ function HistoryChip({
     <div
       className={cn(
         'group flex items-center gap-1.5 rounded-xl',
-        'border border-(--border-color) bg-(--background-color)',
-        'hover:border-(--main-color) hover:shadow-md',
+        'bg-(--background-color)',
+        'hover:shadow-md',
         'transition-all duration-200',
         'overflow-hidden',
       )}

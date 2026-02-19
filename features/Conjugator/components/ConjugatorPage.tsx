@@ -132,12 +132,12 @@ export default function ConjugatorPage({ locale = 'en' }: ConjugatorPageProps) {
       <header
         className={cn(
           'flex flex-col items-start gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:p-6',
-          'border border-(--border-color) bg-gradient-to-r from-(--card-color) to-(--background-color)',
+          'bg-gradient-to-r from-(--card-color) to-(--background-color)',
         )}
       >
         <div
           className={cn(
-            'rounded-xl border border-(--main-color)/20 bg-(--main-color)/10 p-2.5 sm:p-3',
+            'rounded-xl bg-(--main-color)/10 p-2.5 sm:p-3',
           )}
           aria-hidden='true'
         >
@@ -159,13 +159,13 @@ export default function ConjugatorPage({ locale = 'en' }: ConjugatorPageProps) {
             onClick={handleShare}
             className={cn(
               'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all',
-              'border border-(--border-color) bg-(--card-color)',
-              'hover:border-(--main-color)/50 hover:bg-(--main-color)/10',
+              'bg-(--card-color)',
+              'hover:bg-(--main-color)/10',
               'focus:ring-2 focus:ring-(--main-color)/50 focus:outline-none',
               shareButtonState === 'copied' &&
-                'border-green-500/50 bg-green-500/10 text-green-600',
+                'bg-green-500/10 text-green-600',
               shareButtonState === 'error' &&
-                'border-red-500/50 bg-red-500/10 text-red-600',
+                'bg-red-500/10 text-red-600',
             )}
             aria-label={
               shareButtonState === 'copied'

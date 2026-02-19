@@ -51,7 +51,6 @@ export default function ConjugationCategory({
     <div
       className={cn(
         'flex flex-col overflow-hidden rounded-xl',
-        'border border-(--border-color)',
         'bg-(--card-color)',
         'transition-all duration-200',
       )}

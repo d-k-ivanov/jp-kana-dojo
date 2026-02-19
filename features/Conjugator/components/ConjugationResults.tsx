@@ -109,7 +109,7 @@ export default function ConjugationResults({
       <div
         className={cn(
           'flex flex-col items-center justify-center rounded-2xl py-16',
-          'border border-(--border-color) bg-(--card-color)',
+          'bg-(--card-color)',
         )}
       >
         <Loader2 className='h-10 w-10 animate-spin text-(--main-color)' />
@@ -126,7 +126,7 @@ export default function ConjugationResults({
       <div
         className={cn(
           'flex flex-col items-center justify-center rounded-2xl py-16',
-          'border border-(--border-color) bg-(--card-color)',
+          'bg-(--card-color)',
           'text-(--secondary-color)',
         )}
       >
